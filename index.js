@@ -112,7 +112,7 @@ function radians(degrees) {
 /**
  * Generates the definition from the given short key
  */
-function fromShortKey(key) {
+ function fromShortKey(key) {
     const sourceLayers = key.split(":");
     if (sourceLayers.length > maxLayer) {
         throw new Error("Only " + maxLayer + " layers allowed");
@@ -121,13 +121,18 @@ function fromShortKey(key) {
     let layers = [];
     for (let i = 0; i < sourceLayers.length; ++i) {
         var text = sourceLayers[i];
+
+        if (text.length < 8) { // Invalid shape code, but potentially previewable after padding
+            showError("Invalid layer: '" + text + "' -> must be 8 characters");
+        }
+        if (text.length > 8) {
+            throw new Error("Invalid layer: '" + text + "' -> must be 8 characters");
+        }
+
         if (text.length % 2){
             text += 'u';
         }
         text = text.padEnd(8,'-');
-        if (text.length !== 8) {
-            throw new Error("Invalid layer: '" + text + "' -> must be 8 characters");
-        }
 
         if (text === "--".repeat(4)) {
             throw new Error("Empty layers are not allowed");
