@@ -291,6 +291,9 @@ function renderShape(layers) {
     }
 }
 
+/**
+ * Picks random colors which are close to each other
+ */
 function generateRandomColorSet(allowUncolored = false) {
     const colorWheel = [
         enumColors.red,
@@ -307,27 +310,34 @@ function generateRandomColorSet(allowUncolored = false) {
     if (allowUncolored) {
         universalColors.push(enumColors.uncolored);
     };
-    const index = nextIntRange(0, colorWheel.length - 2);
+    const index = getRandomArbitrary(0, colorWheel.length - 2);
     const pickedColors = colorWheel.slice(index, index + 3);
     pickedColors.push(choice(universalColors));
     return pickedColors;
 }
 
-function nextIntRange(min, max) {
+function getRandomArbitrary(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
 function choice(array) {
-    const index = this.nextIntRange(0, array.length);
+    const index = getRandomArbitrary(0, array.length);
     return array[index];
 }
 
-function computeFreeplayShape(layerCount) {
+function clamp(number, min, max) {
+    return Math.max(min, Math.min(number, max));
+}
 
-    /** @type {Array<import("./shape_definition").ShapeLayer>} */
+/**
+ * Creates a random shape
+ */
+function computeFreeplayShape(level) {
+    const layerCount = clamp(level / 25, 2, 4);
+
     let layers = [];
 
-    const colors = this.generateRandomColorSet(true);
+    const colors = this.generateRandomColorSet(level > 35);
 
     let pickedSymmetry = null; // pairs of quadrants that must be the same
     if (Math.random() < 0.5) {
@@ -366,10 +376,10 @@ function computeFreeplayShape(layerCount) {
 
     const localRandomColor = () => choice(colors);
     const localRandomShape = () => choice(Object.values(enumSubShape));
+    
     let isMissingCorner = false;
-    // loop 4 times, 1 layer each time
+
     for (let i = 0; i < layerCount; ++i) {
-        /** @type {import("./shape_definition").ShapeLayer} */
         const layer = [null, null, null, null];
 
         for (let j = 0; j < pickedSymmetry.length; ++j) {
@@ -384,8 +394,8 @@ function computeFreeplayShape(layerCount) {
                 };
             }
         }
-        if (Math.random() > 0.95 && !isMissingCorner) {
-            layer[nextIntRange(0, 4)] = null;
+        if (level > 75 && Math.random() > 0.95 && !isMissingCorner) {
+            layer[getRandomArbitrary(0, 4)] = null;
             isMissingCorner = true;
         }
         layers.push(layer);
@@ -393,7 +403,10 @@ function computeFreeplayShape(layerCount) {
     return layers;
 }
 
-function layersToShortCode(layers) {
+/**
+ * Generates the short key from the given definition
+ */
+function toShortKey(layers) {
     let shortCode = "";
     for (let i = 0; i < layers.length; ++i) { // for each layer
         for (let j = 0; j < 4; ++j) { // for each corner in a layer
@@ -406,6 +419,7 @@ function layersToShortCode(layers) {
         }
         shortCode += ":";
     }
+    shortCode = shortCode.replace(/:+$/, "");
     return shortCode;
 }
 
@@ -481,11 +495,10 @@ window.shareShape = () => {
 };
 
 window.randomShape = () => {
-    let layerCount = nextIntRange(0, maxLayer) + 1;
-    let code = computeFreeplayShape(layerCount);
+    let level = getRandomArbitrary(1, 200);
+    let code = computeFreeplayShape(level);
     
-    code = layersToShortCode(code);
-    code = code.replace(/:+$/, "");
+    code = toShortKey(code);
     
     document.getElementById("code").value = code;
     generate();
